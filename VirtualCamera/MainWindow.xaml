@@ -5,8 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VirtualCamera"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
+        Title="MainWindow" Height="1000" Width="1000" KeyDown="Window_KeyDown">
+    <Grid RenderTransformOrigin="0.5,0.5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="477*"/>
+            <ColumnDefinition Width="515*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform/>
+                <SkewTransform/>
+                <RotateTransform Angle="-0.275"/>
+                <TranslateTransform/>
+            </TransformGroup>
+        </Grid.RenderTransform>
+        <Canvas  x:Name="myCanvas" HorizontalAlignment="Left" Width="991" RenderTransformOrigin="0.5,0.5" Grid.ColumnSpan="2">
+            <Canvas.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleY="0.21"/>
+                    <RotateTransform/>
+                    <TranslateTransform Y="1.853"/>
+                </TransformGroup>
+            </Canvas.RenderTransform>
+        </Canvas>
+
     </Grid>
 </Window>
