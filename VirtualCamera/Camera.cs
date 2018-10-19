@@ -54,7 +54,7 @@ namespace VirtualCamera
 
             // Create a 4x4 orientation matrix from the right, up, and forward vectors
             // This is transposed which is equivalent to performing an inverse 
-            // if the matrix is orthonormalized (in this case, it is).
+            // if the matrix is orthonormalized
             Matrix4x4 orientation = new Matrix4x4 (){
                 M11 = xaxis.X, M12 = yaxis.X, M13 = zaxis.X, M14 = 0 ,
                 M21 = xaxis.Y, M22 = yaxis.Y, M23 = zaxis.Y, M24 = 0 ,
