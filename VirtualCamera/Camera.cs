@@ -15,6 +15,7 @@ namespace VirtualCamera
         /// </summary>
         public Vector3 Position { get; set; }
 
+
         /// <summary>
         /// Camera Target - point to look at
         /// </summary>
@@ -25,19 +26,29 @@ namespace VirtualCamera
                 Vector3 v = Vector3.UnitX;
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationY(phi/* - MathHelper.PiOver2*/));
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
-                v += Position;
+                //v += Position;
                 return v;
             }
 
             set
             {
                 // calculate angles
-                Vector3 dir = Vector3.Normalize(value - Position);
+                Vector3 dir = Vector3.Normalize(value/* - Position*/);
 
                 float p = (float)Math.Sqrt(dir.X * dir.X + dir.Z * dir.Z);
                 theta = (float)Math.Atan2(dir.Y, p);
 
                 phi = CalculatePhi(dir);
+            }
+        }
+        private double _fieldOfView;
+        public double FieldOfView {
+            get { return _fieldOfView; }
+            set {
+                if (value < 179 && value > 1)
+                {
+                    _fieldOfView = value;
+                }
             }
         }
 
@@ -46,9 +57,14 @@ namespace VirtualCamera
             get { return CreateLookAt(Position, Target, Vector3.UnitY); }
         }
 
+        public Matrix4x4 ProjectionMatrix
+        {
+            get { return GetProjectionMatrix(1); }
+        }
+
         private Matrix4x4 CreateLookAt(Vector3 position, Vector3 target, Vector3 Up)
         {
-            Vector3 zaxis = Vector3.Normalize(position - target);    // The "forward" vector.
+            Vector3 zaxis = Vector3.Normalize(/*position - */target);    // The "forward" vector.
             Vector3 xaxis = Vector3.Normalize(Vector3.Cross(Up, zaxis));// The "right" vector.
             Vector3 yaxis = Vector3.Cross(zaxis, xaxis);     // The "up" vector.
 
@@ -61,6 +77,7 @@ namespace VirtualCamera
                 M31 = xaxis.Z, M32 = yaxis.Z, M33 = zaxis.Z, M34 = 0 ,       
                 M41 = 0, M42 = 0, M43 = 0, M44 = 1 
             };
+            orientation = Matrix4x4.Transpose(orientation);
 
             // Create a 4x4 translation matrix.
             // The eye position is negated which is equivalent
@@ -72,6 +89,7 @@ namespace VirtualCamera
                 M31 = 0, M32 = 0, M33 = 1, M34 = 0 ,       
                 M41 = -position.X, M42 = -position.Y, M43 = -position.Z, M44 = 1 
             };
+            translation = Matrix4x4.Transpose(translation);
 
             // Combine the orientation and translation to compute 
             // the final view matrix. Note that the order of 
@@ -84,7 +102,7 @@ namespace VirtualCamera
         {
             get
             {
-                Vector3 v = Vector3.UnitZ;
+                Vector3 v = Vector3.UnitY;
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationZ(phi - (float)(Math.PI/2)));
                 return Vector3.Normalize(v);
@@ -93,7 +111,7 @@ namespace VirtualCamera
 
         private Vector3 Right
         {
-            get { return Vector3.Normalize(Vector3.Cross(Vector3.Normalize(Target - Position), Up)); }
+            get { return Vector3.Normalize(Vector3.Cross(Vector3.Normalize(Target /*- Position*/), Up)); }
         }
         #endregion
 
@@ -103,6 +121,7 @@ namespace VirtualCamera
             Position = Vector3.Zero;
             phi = 0.0f;
             theta = 0.0f;
+            FieldOfView = 45d;
         }
 
         public Camera(Vector3 position)
@@ -115,6 +134,7 @@ namespace VirtualCamera
         {
             Position = position;
             Target = target;
+            FieldOfView = 45d;
         }
         #endregion
 
@@ -126,7 +146,7 @@ namespace VirtualCamera
         /// negative - moving backward</param>
         public void MoveForward(float m)
         {
-            Position += Vector3.Normalize(Target - Position) * m;
+            Position += Vector3.Normalize(Target/* - Position*/) * m;
         }
 
         /// <summary>
@@ -247,17 +267,20 @@ namespace VirtualCamera
             // D3DXMatrixOrthoRH with the exception that in WPF only
             // the camera's width is specified.  Height is calculated
             // from width and the aspect ratio.
-            float w = 45d.ToRadians();
-            float h = w / aspectRatio;
-            float zn = 1.0f;
-            float zf = 500.0f;
-            float m33 = 1 / (zn - zf);
-            float m43 = zn * m33;
+            float fov = FieldOfView.ToRadians();
+            float f = 1 / (float)Math.Tan(fov / 2.0F);
+            float aspect = aspectRatio;
+            float zn = 1.0f; 
+            float zf = 800.0f;
+            float m33 = (zf + zn) / (zn - zf);
+            float m43 = (2.0F * zf * zn) / (zn - zf);
+
             return new Matrix4x4(
-                  2/w, 0, 0, 0,
-                  0, 2/h, 0, 0,
-                  0, 0, m33, 0,
-                  0, 0, m43, 1);
+                f / aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, m33, m43,
+                0, 0, -1, 0
+                );
         }
     }
 }

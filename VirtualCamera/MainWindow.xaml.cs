@@ -23,69 +23,68 @@ namespace VirtualCamera
     {
         public List<Line> Lines { get; set; }
         public Camera camera { get; set; }
-        public Matrix4x4 projectionMatrix { get; set; }
+        public List<Vector4> DummyCube { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
-            camera = new Camera(new Vector3(50, 0, 150F), new Vector3(150, 200, 250F));
+            camera = new Camera(new Vector3(0, 0, -10F), new Vector3(0, 0, -1));
 
-            projectionMatrix = camera.GetProjectionMatrix(1);
+            DummyCube = new List<Vector4>() {
+                new Vector4(-1, -1, -1, 1),
+                new Vector4(-1, 1, -1, 1),
+                new Vector4(1, 1, -1, 1),
+                new Vector4(1, -1, -1, 1),
+                new Vector4(-1, -1, 1, 1),
+                new Vector4(-1, 1, 1, 1),
+                new Vector4(1, 1, 1, 1),
+                new Vector4(1, -1, 1, 1),
+             };
+
             setLines();
         }
 
         private void setLines()
-        { 
-            Vector4 p1 = new Vector4(100, 150, 200, 1);
-            Vector4 p2 = new Vector4(100, 250, 200, 1);
-            Vector4 p3 = new Vector4(200, 250, 200, 1);
-            Vector4 p4 = new Vector4(200, 150, 200, 1);
-            Vector4 p12 = new Vector4(100, 150, 300, 1);
-            Vector4 p22 = new Vector4(100, 250, 300, 1);
-            Vector4 p32 = new Vector4(200, 250, 300, 1);
-            Vector4 p42 = new Vector4(200, 150, 300, 1);
-
-
-            p1 = p1.Multiply(camera.View).Multiply(projectionMatrix);
-            p2 = p2.Multiply(camera.View).Multiply(projectionMatrix);
-            p3 = p3.Multiply(camera.View).Multiply(projectionMatrix);
-            p4 = p4.Multiply(camera.View).Multiply(projectionMatrix);
-            p12 = p12.Multiply(camera.View).Multiply(projectionMatrix);
-            p22 = p22.Multiply(camera.View).Multiply(projectionMatrix);
-            p32 = p32.Multiply(camera.View).Multiply(projectionMatrix);
-            p42 = p42.Multiply(camera.View).Multiply(projectionMatrix);         
-
+        {            
+            var VP = camera.ProjectionMatrix * camera.View;
             myCanvas.Children.Clear();
-            Line myLine = new Line();
-            myLine.Stroke = System.Windows.Media.Brushes.Red;
-            myLine.X1 = camera.Position.X;
-            myLine.X2 = camera.Target.X;
-            myLine.Y1 = camera.Position.Y;
-            myLine.Y2 = camera.Target.Y;
-            myLine.StrokeThickness = 5;
-            myCanvas.Children.Add(myLine); 
-            DrawLine(p1, p2);
-            DrawLine(p2, p3);
-            DrawLine(p3, p4);
-            DrawLine(p4, p1);
-            DrawLine(p12, p22);
-            DrawLine(p22, p32);
-            DrawLine(p32, p42);
-            DrawLine(p42, p12);
-            DrawLine(p1, p12);
-            DrawLine(p2, p22);
-            DrawLine(p3, p32);
-            DrawLine(p4, p42);
+            CreateCube(DummyCube, VP, new Vector4(5, 0, 10, 1));
+            CreateCube(DummyCube, VP, new Vector4(-5, 0, 10, 1));
+        }
+
+        private void CreateCube(List<Vector4> points, Matrix4x4 VP, Vector4 translate)
+        {
+            var newPoints = new List<Vector4>();
+            for (int i = 0; i < points.Count(); i++)
+            {
+                var tmp = points[i] + translate;
+                tmp = tmp.Multiply(VP);
+                newPoints.Add(tmp / tmp.W);
+            }
+
+            DrawLine(newPoints[0], newPoints[1]);
+            DrawLine(newPoints[1], newPoints[2]);
+            DrawLine(newPoints[2], newPoints[3]);
+            DrawLine(newPoints[3], newPoints[0]);
+            DrawLine(newPoints[4], newPoints[5]);
+            DrawLine(newPoints[5], newPoints[6]);
+            DrawLine(newPoints[6], newPoints[7]);
+            DrawLine(newPoints[7], newPoints[4]);
+            DrawLine(newPoints[0], newPoints[4]);
+            DrawLine(newPoints[1], newPoints[5]);
+            DrawLine(newPoints[2], newPoints[6]);
+            DrawLine(newPoints[3], newPoints[7]);
+
         }
 
         private void DrawLine(Vector4 Start, Vector4 End)
         {
             Line myLine = new Line();
             myLine.Stroke = System.Windows.Media.Brushes.Black;
-            myLine.X1 = Start.X;
-            myLine.X2 = End.X;
-            myLine.Y1 = Start.Y;
-            myLine.Y2 = End.Y;
+            myLine.X1 = 500 * Start.X + 500;
+            myLine.X2 = 500 * End.X + 500;
+            myLine.Y1 = 1000 - (500 * Start.Y + 500);
+            myLine.Y2 = 1000 - (500 * End.Y + 500);
             myLine.StrokeThickness = 2;
             myCanvas.Children.Add(myLine);
         }
@@ -94,37 +93,53 @@ namespace VirtualCamera
         {
             if (e.Key == Key.W)
             {
-                camera.MoveForward(15);
+                camera.MoveForward(1);
             }
             else if (e.Key == Key.D)
             {
-                camera.MoveRight(15);
+                camera.MoveRight(1);
             }
             else if (e.Key == Key.A)
             {
-                camera.MoveRight(-5);
+                camera.MoveRight(-1);
             }
             else if (e.Key == Key.S)
             {
-                camera.MoveForward(-5);
+                camera.MoveForward(-1);
             }
             else if (e.Key == Key.Q)
             {
-                camera.RotateY(0.05F);
+                camera.RotateY(0.01F);
             }
             else if (e.Key == Key.E)
             {
-                camera.RotateY(-0.05F);
+                camera.RotateY(-0.01F);
             }
             else if (e.Key == Key.X)
             {
-                camera.RotateX(0.05F);
+                camera.RotateX(0.01F);
             }
             else if (e.Key == Key.Z)
             {
-                camera.RotateX(-0.05F);
+                camera.RotateX(-0.01F);
             }
-            
+            else if (e.Key == Key.U)
+            {
+                camera.MoveUp(1);
+            }
+            else if (e.Key == Key.J)
+            {
+                camera.MoveUp(-1);
+            }
+            else if (e.Key == Key.Add)
+            {
+                camera.FieldOfView -= 5d;
+            }
+            else if (e.Key == Key.Subtract)
+            {
+                camera.FieldOfView += 5d;
+            }
+
 
             setLines();
         }
