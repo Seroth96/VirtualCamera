@@ -38,7 +38,7 @@ namespace VirtualCamera
                 new Vector4(-1, -1, 1, 1),
                 new Vector4(-1, 1, 1, 1),
                 new Vector4(1, 1, 1, 1),
-                new Vector4(1, -1, 1, 1),
+                new Vector4(1, -1, 1, 1), 
              };
 
             setLines();
