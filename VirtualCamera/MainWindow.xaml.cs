@@ -81,10 +81,10 @@ namespace VirtualCamera
         {
             Line myLine = new Line();
             myLine.Stroke = System.Windows.Media.Brushes.Black;
-            myLine.X1 = 500 * Start.X + 500;
-            myLine.X2 = 500 * End.X + 500;
-            myLine.Y1 = 1000 - (500 * Start.Y + 500);
-            myLine.Y2 = 1000 - (500 * End.Y + 500);
+            myLine.X1 = 400 * Start.X + 400;
+            myLine.X2 = 400 * End.X + 400;
+            myLine.Y1 = 800 - (400 * Start.Y + 400);
+            myLine.Y2 = 800 - (400 * End.Y + 400);
             myLine.StrokeThickness = 2;
             myCanvas.Children.Add(myLine);
         }
@@ -97,11 +97,11 @@ namespace VirtualCamera
             }
             else if (e.Key == Key.D)
             {
-                camera.MoveRight(1);
+                camera.MoveRight(-1);
             }
             else if (e.Key == Key.A)
             {
-                camera.MoveRight(-1);
+                camera.MoveRight(1);
             }
             else if (e.Key == Key.S)
             {

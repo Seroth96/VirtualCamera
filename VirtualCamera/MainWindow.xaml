@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VirtualCamera"
         mc:Ignorable="d"
-        Title="MainWindow" Height="1000" Width="1000" KeyDown="Window_KeyDown">
+        Title="MainWindow" Height="800" Width="800" WindowStartupLocation="CenterScreen" KeyDown="Window_KeyDown" ResizeMode="NoResize">
     <Grid RenderTransformOrigin="0.5,0.5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="477*"/>
