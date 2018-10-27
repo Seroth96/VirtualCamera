@@ -24,7 +24,7 @@ namespace VirtualCamera
             {
                 Vector3 v = Vector3.UnitX;
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationY(phi /*- (float)Math.PI*/));
-                //v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
+                v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
                 //v += Position;
                 return v;
             }
@@ -126,7 +126,7 @@ namespace VirtualCamera
             AngleX = AngleY = 0;
 
             cameraQuat = y * (cameraQuat * x);
-           // var quat = Quaternion.Normalize(cameraQuat);
+            cameraQuat = Quaternion.Normalize(cameraQuat);
             var orient = Matrix4x4.CreateFromQuaternion(cameraQuat);
 
             // Create a 4x4 translation matrix.
@@ -198,8 +198,9 @@ namespace VirtualCamera
         /// negative - moving backward</param>
         public void MoveForward(float m)
         {
-            //Position += (m) * new Vector3(View.M13,View.M23, View.M33);
-            Position += m * Vector3.Normalize(Target);
+            var pyk = Matrix4x4.CreateFromQuaternion(cameraQuat);
+            Position += (m) * new Vector3(pyk.M31, pyk.M32, pyk.M33);
+            //Position += m * Vector3.Normalize(Target);
             UpdateView();
         }
 
@@ -210,7 +211,8 @@ namespace VirtualCamera
         /// negative - moving left</param>
         public void MoveRight(float m)
         {
-            Position += m * Right;
+            Position += -m * new Vector3(View.M11, View.M12, View.M13);
+            //Position += m * Right;
             UpdateView();
         }
 
@@ -222,8 +224,8 @@ namespace VirtualCamera
         /// negative - moving down</param>
         public void MoveUp(float m)
         {
-            //Position += m * new Vector3(View.M21, View.M22, View.M32);
-            Position += Up * m;
+            Position += m * new Vector3(View.M21, View.M22, View.M23);
+            //Position += Up * m;
             UpdateView();
         }
 
