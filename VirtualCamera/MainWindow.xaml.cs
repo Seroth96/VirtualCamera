@@ -24,11 +24,13 @@ namespace VirtualCamera
         public List<Line> Lines { get; set; }
         public Camera camera { get; set; }
         public List<Vector4> DummyCube { get; set; }
+        public List<Vector4> DummyLine { get; set; }
+        public Matrix4x4 view { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
-            camera = new Camera(new Vector3(0, 0, -10F), new Vector3(0, 0, -1));
+            camera = new Camera(new Vector3(0, 0, -10F), new Vector3(0,0,-1));
 
             DummyCube = new List<Vector4>() {
                 new Vector4(-1, -1, -1, 1),
@@ -41,15 +43,47 @@ namespace VirtualCamera
                 new Vector4(1, -1, 1, 1), 
              };
 
+            DummyLine = new List<Vector4>()
+            {
+                new Vector4(-1, 1, 1, 1),
+                new Vector4(-1, 1, -32, 1)
+            };
+
+            camera.UpdateView();
+
             setLines();
         }
 
         private void setLines()
         {            
+
             var VP = camera.ProjectionMatrix * camera.View;
             myCanvas.Children.Clear();
             CreateCube(DummyCube, VP, new Vector4(5, 0, 10, 1));
             CreateCube(DummyCube, VP, new Vector4(-5, 0, 10, 1));
+            CreateCube(DummyCube, VP, new Vector4(-5, 0, 40, 1));
+            CreateCube(DummyCube, VP, new Vector4(5, 0, 40, 1));
+            DrawLineFromLocal(DummyLine, new Vector4(-2, 0, 40, 1), VP);
+            DrawLineFromLocal(DummyLine, new Vector4(4, 0, 40, 1), VP);
+        }
+
+        private void DrawLineFromLocal(List<Vector4> line, Vector4 translate, Matrix4x4 VP)
+        {
+            var start = line.First() + translate;
+            start = start.Multiply(VP);
+            if (start.W != 0)
+            {
+                start /= start.W;
+            }
+
+            var end = line.Last() + translate;
+            end = end.Multiply(VP);
+            if (end.W != 0)
+            {
+                end /= end.W;
+            }
+
+            DrawLine(start, end);
         }
 
         private void CreateCube(List<Vector4> points, Matrix4x4 VP, Vector4 translate)
@@ -59,7 +93,11 @@ namespace VirtualCamera
             {
                 var tmp = points[i] + translate;
                 tmp = tmp.Multiply(VP);
-                newPoints.Add(tmp / tmp.W);
+                if (tmp.W != 0)
+                {
+                    tmp /= tmp.W;
+                }
+                newPoints.Add(tmp);
             }
 
             DrawLine(newPoints[0], newPoints[1]);
@@ -97,11 +135,11 @@ namespace VirtualCamera
             }
             else if (e.Key == Key.D)
             {
-                camera.MoveRight(-1);
+                camera.MoveRight(1);
             }
             else if (e.Key == Key.A)
             {
-                camera.MoveRight(1);
+                camera.MoveRight(-1);
             }
             else if (e.Key == Key.S)
             {
@@ -125,11 +163,11 @@ namespace VirtualCamera
             }
             else if (e.Key == Key.U)
             {
-                camera.MoveUp(1);
+                camera.MoveUp(-1);
             }
             else if (e.Key == Key.J)
             {
-                camera.MoveUp(-1);
+                camera.MoveUp(1);
             }
             else if (e.Key == Key.Add)
             {
@@ -139,8 +177,6 @@ namespace VirtualCamera
             {
                 camera.FieldOfView += 5d;
             }
-
-
             setLines();
         }
     }

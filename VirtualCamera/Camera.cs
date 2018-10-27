@@ -15,7 +15,6 @@ namespace VirtualCamera
         /// </summary>
         public Vector3 Position { get; set; }
 
-
         /// <summary>
         /// Camera Target - point to look at
         /// </summary>
@@ -24,8 +23,8 @@ namespace VirtualCamera
             get
             {
                 Vector3 v = Vector3.UnitX;
-                v = Vector3.Transform(v, Matrix4x4.CreateRotationY(phi/* - MathHelper.PiOver2*/));
-                v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
+                v = Vector3.Transform(v, Matrix4x4.CreateRotationY(phi /*- (float)Math.PI*/));
+                //v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
                 //v += Position;
                 return v;
             }
@@ -41,6 +40,7 @@ namespace VirtualCamera
                 phi = CalculatePhi(dir);
             }
         }
+
         private double _fieldOfView;
         public double FieldOfView {
             get { return _fieldOfView; }
@@ -54,7 +54,7 @@ namespace VirtualCamera
 
         public Matrix4x4 View
         {
-            get { return CreateLookAt(Position, Target, Vector3.UnitY); }
+            get; set;
         }
 
         public Matrix4x4 ProjectionMatrix
@@ -62,7 +62,7 @@ namespace VirtualCamera
             get { return GetProjectionMatrix(1); }
         }
 
-        private Matrix4x4 CreateLookAt(Vector3 position, Vector3 target, Vector3 Up)
+        private Matrix4x4 CreateViewMatrix(Vector3 position, Vector3 target, Vector3 Up)
         {
             Vector3 zaxis = Vector3.Normalize(/*position - */target);    // The "forward" vector.
             Vector3 xaxis = Vector3.Normalize(Vector3.Cross(Up, zaxis));// The "right" vector.
@@ -71,13 +71,63 @@ namespace VirtualCamera
             // Create a 4x4 orientation matrix from the right, up, and forward vectors
             // This is transposed which is equivalent to performing an inverse 
             // if the matrix is orthonormalized
-            Matrix4x4 orientation = new Matrix4x4 (){
-                M11 = xaxis.X, M12 = yaxis.X, M13 = zaxis.X, M14 = 0 ,
-                M21 = xaxis.Y, M22 = yaxis.Y, M23 = zaxis.Y, M24 = 0 ,
-                M31 = xaxis.Z, M32 = yaxis.Z, M33 = zaxis.Z, M34 = 0 ,       
-                M41 = 0, M42 = 0, M43 = 0, M44 = 1 
+            Matrix4x4 orientation = new Matrix4x4()
+            {
+                M11 = xaxis.X,
+                M12 = yaxis.X,
+                M13 = zaxis.X,
+                M14 = 0,
+                M21 = xaxis.Y,
+                M22 = yaxis.Y,
+                M23 = zaxis.Y,
+                M24 = 0,
+                M31 = xaxis.Z,
+                M32 = yaxis.Z,
+                M33 = zaxis.Z,
+                M34 = 0,
+                M41 = 0,
+                M42 = 0,
+                M43 = 0,
+                M44 = 1
             };
             orientation = Matrix4x4.Transpose(orientation);
+
+            Matrix4x4 translation = new Matrix4x4()
+            {
+                M11 = 1,
+                M12 = 0,
+                M13 = 0,
+                M14 = 0,
+                M21 = 0,
+                M22 = 1,
+                M23 = 0,
+                M24 = 0,
+                M31 = 0,
+                M32 = 0,
+                M33 = 1,
+                M34 = 0,
+                M41 = -position.X,
+                M42 = -position.Y,
+                M43 = -position.Z,
+                M44 = 1
+            };
+            translation = Matrix4x4.Transpose(translation);
+
+            return (orientation * translation);
+        }
+
+        private Quaternion cameraQuat;
+        //private Quaternion keyQuat;
+        public void UpdateView()
+        {
+            //keyQuat = Quaternion.CreateFromYawPitchRoll(AngleY, AngleX, 0);
+            var x = Quaternion.CreateFromAxisAngle(Vector3.UnitX, AngleX);
+            var y = Quaternion.CreateFromAxisAngle(Vector3.UnitY, AngleY);
+            AngleX = AngleY = 0;
+
+            cameraQuat = y * (cameraQuat * x);
+           // var quat = Quaternion.Normalize(cameraQuat);
+            var orient = Matrix4x4.CreateFromQuaternion(cameraQuat);
 
             // Create a 4x4 translation matrix.
             // The eye position is negated which is equivalent
@@ -87,15 +137,15 @@ namespace VirtualCamera
                 M11 =1, M12 =0, M13 = 0, M14 = 0 ,
                 M21 = 0, M22 = 1, M23 = 0, M24 = 0 ,
                 M31 = 0, M32 = 0, M33 = 1, M34 = 0 ,       
-                M41 = -position.X, M42 = -position.Y, M43 = -position.Z, M44 = 1 
+                M41 = -Position.X, M42 = -Position.Y, M43 = -Position.Z, M44 = 1 
             };
-            translation = Matrix4x4.Transpose(translation);
+            translation = Matrix4x4.Transpose(translation);            
 
             // Combine the orientation and translation to compute 
             // the final view matrix. Note that the order of 
             // multiplication is reversed because the matrices
             // are already inverted.
-            return (orientation * translation);
+            View = (orient * translation);
         }
 
         private Vector3 Up
@@ -104,14 +154,14 @@ namespace VirtualCamera
             {
                 Vector3 v = Vector3.UnitY;
                 v = Vector3.Transform(v, Matrix4x4.CreateRotationX(theta));
-                v = Vector3.Transform(v, Matrix4x4.CreateRotationZ(phi - (float)(Math.PI/2)));
+                v = Vector3.Transform(v, Matrix4x4.CreateRotationY(phi - (float)(Math.PI/2)));
                 return Vector3.Normalize(v);
             }
         }
 
         private Vector3 Right
         {
-            get { return Vector3.Normalize(Vector3.Cross(Vector3.Normalize(Target /*- Position*/), Up)); }
+            get { return Vector3.Normalize(Vector3.Cross(Vector3.Normalize(Target/* - Position*/), Up)); }
         }
         #endregion
 
@@ -122,6 +172,7 @@ namespace VirtualCamera
             phi = 0.0f;
             theta = 0.0f;
             FieldOfView = 45d;
+            cameraQuat = Quaternion.CreateFromYawPitchRoll(AngleY, AngleX, 0);
         }
 
         public Camera(Vector3 position)
@@ -135,6 +186,7 @@ namespace VirtualCamera
             Position = position;
             Target = target;
             FieldOfView = 45d;
+            cameraQuat = Quaternion.CreateFromYawPitchRoll(AngleY, AngleX, 0);
         }
         #endregion
 
@@ -146,7 +198,9 @@ namespace VirtualCamera
         /// negative - moving backward</param>
         public void MoveForward(float m)
         {
-            Position += Vector3.Normalize(Target/* - Position*/) * m;
+            //Position += (m) * new Vector3(View.M13,View.M23, View.M33);
+            Position += m * Vector3.Normalize(Target);
+            UpdateView();
         }
 
         /// <summary>
@@ -156,7 +210,8 @@ namespace VirtualCamera
         /// negative - moving left</param>
         public void MoveRight(float m)
         {
-            Position += Right * m;
+            Position += m * Right;
+            UpdateView();
         }
 
         /// <summary>
@@ -167,7 +222,9 @@ namespace VirtualCamera
         /// negative - moving down</param>
         public void MoveUp(float m)
         {
+            //Position += m * new Vector3(View.M21, View.M22, View.M32);
             Position += Up * m;
+            UpdateView();
         }
 
         /// <summary>
@@ -179,6 +236,8 @@ namespace VirtualCamera
             Position += translation;
         }
         #endregion
+        public float AngleX { get; set; }
+        public float AngleY { get; set; }
 
         #region Camera Rotation
         /// <summary>
@@ -191,12 +250,21 @@ namespace VirtualCamera
         public void RotateX(float angle)
         {
             theta += angle;
-
+            AngleX += angle;
             // Clamp to (-PI/2, PI/2)
-            if (theta > (float)(Math.PI / 2))
-                theta = (float)(Math.PI / 2) - 0.01f;
-            if (theta < -(float)(Math.PI / 2))
-                theta = -(float)(Math.PI / 2) + 0.01f;
+            //if (theta > (float)(Math.PI / 2))
+            //{
+            //    //theta = (float)(Math.PI / 2) - 0.01f;
+            //    theta -= angle;
+            //    AngleX = 0;
+            //};
+            //if (theta < -(float)(Math.PI / 2))
+            //{
+            //    //theta = -(float)(Math.PI / 2) + 0.01f;
+            //    theta -= angle;
+            //    AngleX = 0;
+            //}
+            UpdateView();
         }
 
         /// <summary>
@@ -208,12 +276,22 @@ namespace VirtualCamera
         public void RotateY(float angle)
         {
             phi += angle;
+            AngleY += angle;
 
-            // Clamp angle to [0, 2*PI]
-            if (phi >= (float)(Math.PI * 2))
-                phi -= (float)(Math.PI * 2);
-            if (phi < 0.0f)
-                phi += (float)(Math.PI * 2);
+            //// Clamp angle to [0, 2*PI]
+            //if (phi >= (float)(Math.PI * 2))
+            //{
+            //    //phi -= (float)(Math.PI * 2);
+            //    phi -= angle;
+            //    AngleY = 0;
+            //}
+            //if (phi < 0.0f)
+            //{
+            //    //phi += (float)(Math.PI * 2);
+            //    phi -= angle;
+            //    AngleY = 0;
+            //}
+            UpdateView();
         }
         #endregion
 
