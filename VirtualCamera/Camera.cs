@@ -185,7 +185,7 @@ namespace VirtualCamera
         {
             Position = position;
             Target = target;
-            FieldOfView = 45d;
+            FieldOfView = 60d;
             cameraQuat = Quaternion.CreateFromYawPitchRoll(AngleY, AngleX, 0);
         }
         #endregion
@@ -350,8 +350,8 @@ namespace VirtualCamera
             float fov = FieldOfView.ToRadians();
             float f = 1 / (float)Math.Tan(fov / 2.0F);
             float aspect = aspectRatio;
-            float zn = 1.0f; 
-            float zf = 800.0f;
+            float zn = 100.0f; 
+            float zf = 500.0f;
             float m33 = (zf + zn) / (zn - zf);
             float m43 = (2.0F * zf * zn) / (zn - zf);
 
